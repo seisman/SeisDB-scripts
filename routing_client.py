@@ -65,32 +65,7 @@ def _download_bulk(r):
         return None
 
 
-def _strip_protocol(url):
-    url = urlparse(url)
-    return url.netloc + url.path
-
-
-# Does not inherit from the FDSN client as that would be fairly hacky as
-# some methods just make no sense for the routing client to have (e.g.
-# get_events() but also others).
 class BaseRoutingClient(HTTPClient):
-    def _filter_requests(self, split):
-        """
-        Filter requests based on including and excluding providers.
-
-        :type split: dict
-        :param split: A dictionary containing the desired routing.
-        """
-        key_map = {_strip_protocol(url): url for url in split.keys()}
-
-        # Apply both filters.
-        f_keys = set(key_map.keys())
-        if self.include_providers:
-            f_keys = f_keys.intersection(set(self.include_providers))
-        f_keys = f_keys.difference(set(self.exclude_providers))
-
-        return {key_map[k]: split[key_map[k]] for k in f_keys}
-
     def _download_waveforms(self, split, **kwargs):
         return self._download_parallel(split, data_type="waveform", **kwargs)
 
@@ -98,17 +73,6 @@ class BaseRoutingClient(HTTPClient):
         return self._download_parallel(split, data_type="station", **kwargs)
 
     def _download_parallel(self, split, data_type, **kwargs):
-        # Apply the provider filter.
-        split = self._filter_requests(split)
-
-        if not split:
-            raise FDSNNoDataException(
-                "Nothing remains to download after the provider "
-                "inclusion/exclusion filters have been applied.")
-
-        if data_type not in ["waveform", "station"]:  # pragma: no cover
-            raise ValueError("Invalid data type.")
-
         # One thread per data center.
         dl_requests = []
         for k, v in split.items():
@@ -143,34 +107,3 @@ class BaseRoutingClient(HTTPClient):
         pool.close()
 
         return collection
-
-    def _handle_requests_http_error(self, r):
-        """
-        This assumes the same error code semantics as the base fdsnws web
-        services.
-
-        Please overwrite this method in a child class if necessary.
-        """
-        reason = r.reason.encode()
-        if hasattr(r, "content"):
-            reason += b" -- " + r.content
-        with io.BytesIO(reason) as buf:
-            raise_on_error(r.status_code, buf)
-
-    def get_waveforms(self, starttime, endtime, **kwargs):
-        bulk = []
-        for _i in ["network", "station", "location", "channel"]:
-            if _i in kwargs:
-                bulk.append(kwargs[_i])
-                del kwargs[_i]
-            else:
-                bulk.append("*")
-        bulk.extend([starttime, endtime])
-        return self.get_waveforms_bulk([bulk], **kwargs)
-
-    def get_stations(self, **kwargs):
-        # Just pass these to the bulk request.
-        bulk = [kwargs.pop(key, '*') for key in (
-                "network", "station", "location", "channel", "starttime",
-                "endtime")]
-        return self.get_stations_bulk([bulk], **kwargs)
