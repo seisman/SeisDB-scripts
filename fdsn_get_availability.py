@@ -1,10 +1,14 @@
 """
 Get the data availability of seismic stations from FDSN data centers.
 
-Also see a related ObsPy issue request: https://github.com/obspy/obspy/pull/3002
+A seismic network or station may start in 1960 but only data since 2000 are
+available from FDSN seismic data centers. This script can get the data
+availability of seismic stations from FDSN data centers.
+
+Also see a related ObsPy feature request: https://github.com/obspy/obspy/pull/3002
 
 Author: Dongdong Tian @ CUG
-Inital Date: 2023/10/21
+Inital Date: 2023/10/11
 Repository: https://github.com/seisman/SeisDB-scripts/
 """
 import sys
@@ -21,8 +25,9 @@ def usage():
     print(
         "Get the data availability of seismic stations from FDSN data centers.\n\n"
         f"Usage:\n    python {sys.argv[0]} network station\n\n"
-        "    Station can be a single station name, a comma-separated list of station namesm\n"
-        "    or a wildcard expression. For a wildcard expression, enclose it in quotes.\n\n"
+        "    Station can be a single station name, a comma-separated list of \n"
+        "    station names or a wildcard expression. For a wildcard expression,\n"
+        "    enclose it in quotes.\n\n"
         f"Example:\n    python {sys.argv[0]} IM 'TX*'\n"
         ""
     )
