@@ -1,5 +1,12 @@
 """
-Download seismic wavefrom from multiple data centers using ObsPy's MassDownloader.
+Download seismic wavefroms from multiple data centers using ObsPy's MassDownloader.
+
+- Author: Dongdong Tian @ CUG
+- Repository: https://github.com/seisman/SeisDB-scripts/
+- History:
+    - 2023/10/16 Initial version.
+
+Reference: https://docs.obspy.org/packages/autogen/obspy.clients.fdsn.mass_downloader.html
 """
 
 import sys
@@ -17,17 +24,17 @@ if len(sys.argv) != 2:
 
 cat = read_events(sys.argv[1])
 
-minradius = 0.0
-maxradius = 90.0
-startshift = 0.0
-endshift = 1800
+# Distance range in degrees
+minradius, maxradius = 0.0, 90.0
+# Time range relative to event origin time
+startshift, endshift = 0.0, 1800.0
 
 
 def event_get_waveforms(event):
-    # event origin
+    # Event origin
     origin = event.preferred_origin() or event.origins[0]
     eventid = origin.time.strftime("%Y%m%d%H%M%S")
-    # domain
+    # Circular domain
     domain = CircularDomain(
         latitude=origin.latitude,
         longitude=origin.longitude,
@@ -35,7 +42,7 @@ def event_get_waveforms(event):
         maxradius=maxradius,
     )
 
-    # restrictions
+    # Restrictions
     restrictions = Restrictions(
         starttime=origin.time + startshift,
         endtime=origin.time + endshift,
