@@ -1,14 +1,13 @@
 """
 Get seismic waveforms from multiple datacenters using the FDSN routing service.
 
-This script is an enhanced version of the ObsPy's RoutingClient. It allows
-you to specify the time window based on seismic phase arrival times.
+This script is an enhanced version of the ObsPy's RoutingClient. It allows you to
+specify the time window based on seismic phase arrival times.
 """
-# %%
 from obspy.clients.fdsn.routing.federator_routing_client import FederatorRoutingClient
 from obspy.clients.fdsn.header import FDSNNoDataException
+from obspy.taup import TauPyModel
 
-# %%
 class EnhancedFederatorRoutingClient(FederatorRoutingClient):
     """
     Enhanced FederatorRoutingClient that allows more control over the request.
@@ -110,7 +109,7 @@ def update_request(split, inv):
             rec.latitude = latitudes[key]
             rec.longitude = longitudes[key]
 
-    
+
 
     # convert the records back to a dict of strings
     for k, v in split.items():
@@ -119,7 +118,7 @@ def update_request(split, inv):
     return split
 
 
-client = EnhancedFederatorRoutingClient(timeout=10)
+client = EnhancedFederatorRoutingClient(timeout=30)
 
 records = client.get_available_channels(
     channel="BHZ",
@@ -142,9 +141,11 @@ for net in inv:
         )
         for arr in arrivals:
             if arr.name == "P":
-                sta.starttime = sta.starttime + arr.time
-            if arr.name == "S":
-                sta.endtime = sta.starttime + arr.time
+                sta.starttime = sta.starttime + arr.time - 10
+                sta.endtime = sta.starttime + arr.time + 30
+
+            #if arr.name == "S":
+            #    sta.endtime = sta.starttime + arr.time
 
 records = update_request(records, inv)
 st = client._download_waveforms(records)
